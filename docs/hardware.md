@@ -12,6 +12,7 @@
 | Setup AP radio | 802.11g, 2.4 GHz | Probe 2026-10-27 |
 | Camera IP in AP mode | `192.168.9.252` (DHCP gives the client `192.168.9.100`) | Probe 2026-10-27 |
 | MAC OUI | `c8:47:8c` (Beken Corporation) | Probe 2026-10-27 |
+| Station MAC | AP BSSID with the lowest bit cleared (`…:55` → `…:54`) | `GetNetworkInfo` (2685) |
 | Firmware | `3.00.42.01_241230` | PPRPC discovery reply |
 | USB | Power only, no data device enumerates on the host | Probe 2026-10-27 |
 | PCB marking | _TODO, needs opening the case_ | |

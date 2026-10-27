@@ -7,9 +7,9 @@
 
 ## Phase 1: local streaming without the cloud
 - [x] Get a snapshot with [zkiiito/A9](https://github.com/zkiiito/A9) (640×480 JPEG, fully offline)
-- [ ] Get a continuous MJPEG stream (`a9_mjpeg_server.py` or
-      [ino-a9-local-bridge](https://github.com/IvanFogel/ino-a9-local-bridge))
-- [ ] Provision the camera onto home Wi-Fi without a Linklemo account
+- [x] Get a continuous MJPEG stream (`a9_mjpeg_server.py` from zkiiito/A9)
+- [x] Provision the camera onto home Wi-Fi without a Linklemo account (`tools/setup_wifi.ps1`)
+- [ ] Confirm whether the `LLM_` AP stays up in station mode, and find a way to turn it off
 - [ ] Document a firewall/VLAN setup that blocks all its internet traffic
 - [ ] Record which hosts it tries to reach (DNS log) in `docs/network.md`
 - [ ] Send any A12-specific fixes upstream

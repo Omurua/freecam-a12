@@ -13,6 +13,9 @@ Tus imágenes se quedan en tu red. Sin cuenta, sin app y sin servidores en otro 
 es una **HA10** y habla el mismo protocolo PPRPC que las cámaras INO-A9. Detalles en
 [docs/findings.md](docs/findings.md).
 
+✅ **2026-10-27:** conectada al Wi-Fi de casa sin la app ([`tools/setup_wifi.ps1`](tools/setup_wifi.ps1)) y con
+vídeo en directo por la red local.
+
 ## ¿Es mi cámara?
 
 | Pista | Valor |

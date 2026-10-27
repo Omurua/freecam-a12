@@ -12,6 +12,9 @@ Your images stay on your network. No account, no app, no servers in another coun
 ✅ **2026-10-27:** first snapshot taken fully offline (no app, no account, no internet). The A12 is internally an
 **HA10** and speaks the same PPRPC protocol as the INO-A9 cameras. See [docs/findings.md](docs/findings.md).
 
+✅ **2026-10-27:** moved onto the home Wi-Fi without the app ([`tools/setup_wifi.ps1`](tools/setup_wifi.ps1)) and
+live video over the LAN.
+
 ## Is this my camera?
 
 | Clue | Value |
