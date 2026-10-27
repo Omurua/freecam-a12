@@ -11,9 +11,9 @@ Lab notes, newest first. Device identifiers (DID, MAC suffix, secrets) are redac
 - A snapshot over the home LAN with the saved DID + secret worked: 640×480 JPEG.
 - **Continuous video works** over the home LAN with zkiiito's `a9_mjpeg_server.py` (`pip install av numpy`),
   viewed in the browser at `http://127.0.0.1:8080/`.
-- ⚠️ **The `LLM_` setup AP still shows up** in Windows' network list more than 5 minutes after the camera
-  joined the home network. If confirmed (Windows can cache scan results), the camera keeps its open-password AP
-  up while it is on your Wi-Fi, which lets anyone nearby join it and read its secret.
+- The `LLM_` setup AP still showed up in Windows' network list ~5 minutes after the camera joined the home
+  network, but **was gone ~12 minutes after**, with the camera still on the LAN. Either the AP lingers for a few
+  minutes or Windows was showing cached scan results; in both cases it does not stay up in station mode.
 
 ## 2026-10-27: control commands work on the HA10
 
