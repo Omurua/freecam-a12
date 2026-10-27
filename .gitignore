@@ -1,0 +1,35 @@
+# Secrets: device keys, prekeys, Wi-Fi credentials
+.env
+*.env
+*_camera.json
+secrets/
+
+# Network captures contain device secrets and your own images
+captures/*
+!captures/README.md
+*.pcap
+*.pcapng
+
+# Vendor firmware and flash dumps are not redistributable
+firmware/*
+!firmware/README.md
+*.bin
+*.apk
+*.xapk
+
+# Ghidra / analysis artefacts
+*.gpr
+*.rep/
+*.lock~
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
