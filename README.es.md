@@ -9,6 +9,10 @@ Tus imágenes se quedan en tu red. Sin cuenta, sin app y sin servidores en otro 
 
 🚧 **Investigación inicial.** Todavía no hay nada listo para el usuario final.
 
+✅ **2026-10-27:** primera foto obtenida totalmente offline (sin app, sin cuenta y sin internet). Por dentro la A12
+es una **HA10** y habla el mismo protocolo PPRPC que las cámaras INO-A9. Detalles en
+[docs/findings.md](docs/findings.md).
+
 ## ¿Es mi cámara?
 
 | Pista | Valor |

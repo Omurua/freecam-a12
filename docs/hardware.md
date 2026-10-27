@@ -6,15 +6,21 @@
 |---|---|---|
 | Marketing name | "A12" HD Wi-Fi camera, black | AliExpress listing |
 | App | Linklemo (`com.xcthings.fchan`) | Owner |
-| Setup AP SSID prefix | `LLM_` | Owner |
+| Internal model | **HA10** (from SSID and DID prefix `PPHA10…`) | Probe 2026-10-27 |
+| Setup AP SSID | `LLM_HA10_<6 digits>` | Probe 2026-10-27 |
 | Setup AP password | `12345678` (factory default, same on every unit) | Owner |
-| PCB marking | _TODO, open the case and photograph the board_ | |
-| SoC | _TODO, probably Beken BK7252N_ | Similar INO-A9 boards |
+| Setup AP radio | 802.11g, 2.4 GHz | Probe 2026-10-27 |
+| Camera IP in AP mode | `192.168.9.252` (DHCP gives the client `192.168.9.100`) | Probe 2026-10-27 |
+| MAC OUI | `c8:47:8c` (Beken Corporation) | Probe 2026-10-27 |
+| Firmware | `3.00.42.01_241230` | PPRPC discovery reply |
+| USB | Power only, no data device enumerates on the host | Probe 2026-10-27 |
+| PCB marking | _TODO, needs opening the case_ | |
+| SoC | _TODO, very likely Beken BK7252N_ | MAC OUI + related boards |
 | Flash chip | _TODO_ | |
 | Image sensor | _TODO_ | |
 | UART pads | _TODO_ | |
 
-## How to fill this in
+## How to fill in the rest
 
 1. Open the case and take sharp photos of both sides of the PCB. Add them to `docs/img/`.
 2. Write down every marking on the main chip, the flash (an 8-pin SOIC) and the sensor ribbon.

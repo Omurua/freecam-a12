@@ -2,12 +2,13 @@
 
 ## Phase 0: identification
 - [ ] Photograph the PCB and identify the SoC, flash and sensor ([hardware.md](hardware.md))
-- [ ] Connect to the `LLM_` AP and scan open ports (`nmap -sU -sT -p- 192.168.x.1`)
-- [ ] Confirm PPRPC on port 20190 by running the existing clients against the camera
+- [x] Connect to the `LLM_` AP and scan open ports (only TCP 20190 is open)
+- [x] Confirm PPRPC on port 20190 by running the existing clients against the camera ([findings](findings.md))
 
 ## Phase 1: local streaming without the cloud
-- [ ] Get a snapshot and an MJPEG stream with [zkiiito/A9](https://github.com/zkiiito/A9) or
-      [ino-a9-local-bridge](https://github.com/IvanFogel/ino-a9-local-bridge)
+- [x] Get a snapshot with [zkiiito/A9](https://github.com/zkiiito/A9) (640×480 JPEG, fully offline)
+- [ ] Get a continuous MJPEG stream (`a9_mjpeg_server.py` or
+      [ino-a9-local-bridge](https://github.com/IvanFogel/ino-a9-local-bridge))
 - [ ] Provision the camera onto home Wi-Fi without a Linklemo account
 - [ ] Document a firewall/VLAN setup that blocks all its internet traffic
 - [ ] Record which hosts it tries to reach (DNS log) in `docs/network.md`
