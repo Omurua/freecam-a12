@@ -7,8 +7,10 @@ Decoded with [`tools/analyze_pcap.py --decrypt`](../tools/analyze_pcap.py). Devi
 
 ## Summary
 
-- **No DNS at all.** The servers are hardcoded IP addresses, so DNS-based blockers (Pi-hole, AdGuard) cannot
-  stop it. Block it by MAC/IP on the router instead.
+- **One DNS lookup at start-up only:** `prod.glbs.xcthings.com` → `47.240.1.244` (seen in the second, two-way
+  capture with a reboot). The firmware also carries that IP and three more (`47.252.5.225`, `8.209.77.49`,
+  `39.108.59.60`) as hardcoded fallbacks, and every later server comes from the `GetServers` answer, not from DNS.
+  So a DNS blocker (Pi-hole, AdGuard) is **not enough**: block the camera by MAC/IP on the router.
 - All three servers are **Alibaba Cloud**:
 
   | IP | Owner (RDAP) | Used for |
@@ -44,12 +46,30 @@ do not match those names exactly (e.g. 17 carries topics, like a subscribe), so 
   the capability is there.
 - The traffic is identical in kind to what other users reported for INO-A9 cameras (ports 80/465/8000).
 
+## Second capture: both directions, with a reboot (2026-10-27)
+
+[`capture_hotspot.ps1 -Wireshark -Reboot`](../tools/capture_hotspot.ps1), 15 minutes, `dumpcap` on the hotspot
+adapter filtered by the camera's MAC, camera power-cycled right after the start. ~5 KB each way.
+
+What the cloud answers (decrypted with the same shared prekey):
+
+| Request | Answer |
+|---|---|
+| `601 GetServers` | Server directory: types 1 and 2 → `8.209.73.117:1053`, type 6 → `8.209.74.201:465`, type 8 → `47.254.174.22` and `47.91.79.195`, type 15 → `47.254.174.22`, types 18/19 → `8.209.74.201` |
+| `12` (client ID) | Two timestamps and **the home's public IP address as seen by the cloud** (redacted here) |
+| `17` (topics) | Echoes `/notify/conn/<DID>` and `/xc/2d/cmd/<DID>` back: the command topic subscription is accepted |
+| `13` (publish state / dp) | A 32-hex-character id per message |
+| `19` keepalive | Empty, answered every ~28 s |
+| `1101 CSCfg` | `{3: {6: "0b"}}`: apparently "no cloud storage configured" |
+
+- **No firmware check (`FirmwareCheck` 921 / `FirmwareNotify` 2670) and no command** arrived in 15 minutes,
+  including the boot. Firmware updates are probably only checked when the vendor app asks, or on a long timer.
+- The cloud learns the household's **public IP** on every connection.
+
 ## Limitations of this capture
 
-- `pktmon` only stored the camera's **outgoing** packets: we know the servers answered (TCP handshakes and
-  sessions completed) but not **what** they answered, nor whether they sent commands.
-- 10 minutes idle only: no motion events, no app session, no long-term behaviour (firmware update checks).
-- Next: capture both directions (e.g. Wireshark on the hotspot adapter) and a longer window.
+- First capture: `pktmon` only stored the camera's **outgoing** packets. Fixed in the second one.
+- 10 and 15 minutes idle only: no motion events, no app session, no long-term behaviour (daily firmware checks?).
 
 ## Recommendation
 

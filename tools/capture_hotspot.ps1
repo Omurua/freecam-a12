@@ -2,26 +2,36 @@
 #
 #   1. starts Windows Mobile Hotspot with a temporary SSID and a random passphrase
 #   2. tells the camera (over the LAN) to join that hotspot (WifiSet)
-#   3. captures all its traffic with pktmon for -Minutes, without opening any stream (idle behaviour)
+#   3. captures all its traffic for -Minutes, without opening any stream (idle behaviour)
 #   4. sends the camera back to the home Wi-Fi (asks for its passphrase, hidden), restores the hotspot settings
 #
-# Run from an ELEVATED PowerShell (pktmon needs admin). Stop any running video server first: the camera only
-# accepts one session at a time. Needs a zkiiito/A9 checkout, $env:A9_PREKEY and a9_camera.json with the
-# camera's current LAN IP.
+# Capture backends:
+#   default     pktmon (built into Windows, needs an ELEVATED PowerShell). Only records the camera's outgoing packets.
+#   -Wireshark  dumpcap from Wireshark + Npcap. Records BOTH directions, filtered by the camera's MAC; no admin needed.
+# -Reboot asks you to power-cycle the camera right after the capture starts, to record its start-up traffic
+# (server lookup, firmware checks).
+#
+# Stop any running video server first: the camera only accepts one session at a time. Needs a zkiiito/A9 checkout,
+# $env:A9_PREKEY and a9_camera.json with the camera's current LAN IP.
 #
 # Example:
 #   $env:A9_PREKEY = '...'
-#   .\tools\capture_hotspot.ps1 -HomeSsid MyWifi -Client C:\src\A9 -Minutes 10
+#   .\tools\capture_hotspot.ps1 -HomeSsid MyWifi -Client C:\src\A9 -Minutes 10 -Wireshark -Reboot
 param(
     [Parameter(Mandatory)] [string]$HomeSsid,
     [Parameter(Mandatory)] [string]$Client,
     [int]$Minutes = 10,
     [string]$Config,
-    [string]$Out
+    [string]$Out,
+    [switch]$Wireshark,
+    [switch]$Reboot,
+    [string]$Dumpcap = 'C:\Program Files\Wireshark\dumpcap.exe'
 )
 if (-not $env:A9_PREKEY) { throw 'Set $env:A9_PREKEY first' }
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
-        [Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Run this from an elevated PowerShell (pktmon needs admin)' }
+if ($Wireshark) {
+    if (-not (Test-Path $Dumpcap)) { throw "dumpcap not found at $Dumpcap (install Wireshark with Npcap, or pass -Dumpcap)" }
+} elseif (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+        [Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Run this from an elevated PowerShell (pktmon needs admin), or use -Wireshark' }
 $Root = Split-Path -Parent $PSScriptRoot
 if (-not $Config) { $Config = Join-Path $Root 'captures\setup\a9_camera.json' }
 if (-not $Out) { $Out = Join-Path $Root ("captures\traffic-" + (Get-Date -Format 'yyyyMMdd-HHmm')) }
@@ -93,18 +103,48 @@ try {
     if (-not $camIp) { throw 'Camera did not show up on the hotspot within 2 minutes' }
     Log "Camera joined the hotspot as $camIp"
 
-    # 3. capture (pktmon sees the camera's packets on the hotspot's virtual adapter, before NAT)
-    $etl = Join-Path $Out 'camera.etl'
-    pktmon filter remove | Out-Null
-    pktmon filter add Camera -i $camIp | Out-Null
-    pktmon start --capture --pkt-size 0 --file-name $etl | Out-Null
-    $pktmonOn = $true
+    # 3. capture on the hotspot's virtual adapter, before NAT
+    $pcap = Join-Path $Out 'camera.pcapng'
+    if ($Wireshark) {
+        $camMac = (Get-NetNeighbor -IPAddress $camIp -AddressFamily IPv4).LinkLayerAddress.Replace('-', ':').ToLower()
+        $hsAdapter = Get-NetIPAddress -AddressFamily IPv4 -IPAddress $hsIp | Get-NetAdapter
+        $iface = "\Device\NPF_$($hsAdapter.InterfaceGuid)"
+        Log "dumpcap on $($hsAdapter.Name) ($iface), filter: ether host $camMac"
+        # Windows PowerShell joins -ArgumentList with spaces and does not quote, so quote by hand
+        $dump = Start-Process -FilePath $Dumpcap -NoNewWindow -PassThru -ArgumentList (
+            "-i `"$iface`" -f `"ether host $camMac`" -w `"$pcap`" -a duration:$($Minutes * 60) -q")
+        Start-Sleep 2
+        if ($dump.HasExited) { throw "dumpcap exited immediately (code $($dump.ExitCode)), nothing captured" }
+    } else {
+        $etl = Join-Path $Out 'camera.etl'
+        pktmon filter remove | Out-Null
+        pktmon filter add Camera -i $camIp | Out-Null
+        pktmon start --capture --pkt-size 0 --file-name $etl | Out-Null
+        $pktmonOn = $true
+    }
     Log "Capturing for $Minutes minutes... (do not open the video stream, this records idle behaviour)"
-    Start-Sleep -Seconds ($Minutes * 60)
-    pktmon stop | Out-Null
-    $pktmonOn = $false
-    pktmon etl2pcap $etl --out (Join-Path $Out 'camera.pcapng') | Out-Null
-    Log "Saved $(Join-Path $Out 'camera.pcapng')"
+    if ($Reboot) {
+        Start-Sleep 5
+        Write-Host ''
+        Write-Host '>>> NOW: unplug the camera, wait 5 seconds and plug it back in. <<<'
+        Write-Host ''
+        Log 'Asked for a camera power cycle'
+    }
+    if ($Wireshark) {
+        $dump.WaitForExit()
+        if (-not (Test-Path $pcap)) { throw "dumpcap finished (code $($dump.ExitCode)) without writing $pcap" }
+    } else {
+        Start-Sleep -Seconds ($Minutes * 60)
+        pktmon stop | Out-Null
+        $pktmonOn = $false
+        pktmon etl2pcap $etl --out $pcap | Out-Null
+    }
+    Log "Saved $pcap"
+    if ($Reboot) {
+        # after a reboot the camera may have taken a different address on the hotspot
+        $again = Find-Cam '192.168.137' 6
+        if ($again) { $camIp = $again }
+    }
 
     # 4. back to the home Wi-Fi (interactive, hidden passphrase)
     Set-CamIp $camIp
@@ -116,7 +156,8 @@ try {
 catch { Log "ERROR: $_" }
 finally {
     if ($pktmonOn) { pktmon stop | Out-Null }
-    pktmon filter remove | Out-Null
+    if (-not $Wireshark) { pktmon filter remove | Out-Null }
+    if ($dump -and -not $dump.HasExited) { $dump.Kill() }
     if ($hotspotOn) {
         Start-Sleep 5
         $null = Await ($tm.StopTetheringAsync()) ([Windows.Networking.NetworkOperators.NetworkOperatorTetheringOperationResult])

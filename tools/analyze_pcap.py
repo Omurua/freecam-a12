@@ -24,12 +24,19 @@ def read_pcapng(path):
             break
         body = data[i + 8:i + blen - 4]
         if btype == 1:                               # Interface Description
-            ifaces.append(struct.unpack_from(endian + "H", body, 0)[0])
+            lt, res, o = struct.unpack_from(endian + "H", body, 0)[0], 1e6, 8
+            while o + 4 <= len(body):                # options: if_tsresol (9) changes the timestamp unit
+                code, olen = struct.unpack_from(endian + "HH", body, o)
+                if code == 0: break
+                if code == 9 and olen >= 1:
+                    v = body[o + 4]
+                    res = 2.0 ** (v & 0x7F) if v & 0x80 else 10.0 ** v
+                o += 4 + ((olen + 3) & ~3)
+            ifaces.append((lt, res))
         elif btype == 6:                             # Enhanced Packet
             iface, th, tl, caplen = struct.unpack_from(endian + "IIII", body, 0)
-            ts = ((th << 32) | tl) / 1e6             # pktmon uses the default microsecond resolution
-            lt = ifaces[iface] if iface < len(ifaces) else 1
-            yield ts, lt, body[20:20 + caplen]
+            lt, res = ifaces[iface] if iface < len(ifaces) else (1, 1e6)
+            yield ((th << 32) | tl) / res, lt, body[20:20 + caplen]
         i += blen
 
 def ip_packet(linktype, frame):
