@@ -15,6 +15,8 @@
 | Station MAC | AP BSSID with the lowest bit cleared (`…:55` → `…:54`) | `GetNetworkInfo` (2685) |
 | Firmware | `3.00.42.01_241230` | PPRPC discovery reply |
 | USB | Power only, no data device enumerates on the host | Probe 2026-10-27 |
+| Board ID (self-reported) | `INNO-IPC-48N-V2.2` | Cloud state message, [network.md](network.md) |
+| Second component version | `3.00.21.01_250726` | Cloud state message |
 | PCB marking | _TODO, needs opening the case_ | |
 | SoC | _TODO, very likely Beken BK7252N_ | MAC OUI + related boards |
 | Flash chip | _TODO_ | |

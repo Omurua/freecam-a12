@@ -138,6 +138,8 @@ def main():
     ap.add_argument("--config", help="a9_camera.json saved by a9_discover.py (else: discover now)")
     ap.add_argument("--timeout", type=float, default=8.0)
     ap.add_argument("--debug", action="store_true", help="log every frame sent/received")
+    ap.add_argument("--password-env", metavar="VAR",
+                    help="with --ssid: read the passphrase from this environment variable instead of asking")
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--probe", action="store_true",
                       help="send read-only commands and report which ones this firmware answers")
@@ -149,9 +151,14 @@ def main():
     if a.ssid is not None:
         if not a.ssid or len(a.ssid.encode()) > MAX_WIFI_FIELD:
             sys.exit(f"--ssid must be 1..{MAX_WIFI_FIELD} bytes")
-        pwd = getpass.getpass(f"Passphrase for '{a.ssid}' (input hidden): ")
-        if pwd != getpass.getpass("Repeat passphrase: "):
-            sys.exit("passphrases do not match, nothing sent")
+        if a.password_env:
+            pwd = os.environ.get(a.password_env)
+            if pwd is None:
+                sys.exit(f"environment variable {a.password_env} is not set")
+        else:
+            pwd = getpass.getpass(f"Passphrase for '{a.ssid}' (input hidden): ")
+            if pwd != getpass.getpass("Repeat passphrase: "):
+                sys.exit("passphrases do not match, nothing sent")
         if len(pwd.encode()) > MAX_WIFI_FIELD:
             sys.exit(f"passphrase must be at most {MAX_WIFI_FIELD} bytes")
 

@@ -10,6 +10,10 @@ Our own helper scripts. They reuse the PPRPC implementation from a local checkou
 | [`a12_wifi.py`](a12_wifi.py) | `--show` / `--scan` / `--ssid NAME`: read the stored Wi-Fi, list networks the camera sees, or move it onto your Wi-Fi (`WifiSet`, 2602). The passphrase is asked interactively |
 | [`setup_wifi.ps1`](setup_wifi.ps1) | Whole flow on Windows: AP → scan → confirm → `WifiSet` → back home → find the camera on the LAN by MAC → snapshot |
 
+| [`capture_hotspot.ps1`](capture_hotspot.ps1) | Makes the PC the camera's router (Mobile Hotspot), records all its traffic with `pktmon` for N minutes, then sends it back home. Needs an elevated PowerShell |
+
+| [`analyze_pcap.py`](analyze_pcap.py) | Summarises a capture: DNS, remote endpoints, intervals, and with `--decrypt` the PPRPC messages to the cloud. Standard library, plus `cryptography` for `--decrypt` |
+
 `a12_wifi.py --probe` sends only read-only commands and reports which ones the firmware answers; add `--debug`
 to see every frame. Commands must wait for the camera's heartbeats after connecting, or it ignores them.
 

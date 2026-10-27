@@ -11,7 +11,8 @@
 - [x] Provision the camera onto home Wi-Fi without a Linklemo account (`tools/setup_wifi.ps1`)
 - [x] Confirm whether the `LLM_` AP stays up in station mode (it does not, see [findings](findings.md))
 - [ ] Document a firewall/VLAN setup that blocks all its internet traffic
-- [ ] Record which hosts it tries to reach (DNS log) in `docs/network.md`
+- [x] Record which hosts it tries to reach in [network.md](network.md) (hardcoded Alibaba Cloud IPs, no DNS)
+- [ ] Capture both directions to see what the cloud answers and whether it sends commands
 - [ ] Send any A12-specific fixes upstream
 
 ## Phase 2: firmware
