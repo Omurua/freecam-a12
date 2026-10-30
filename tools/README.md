@@ -13,7 +13,8 @@ Our own helper scripts. They reuse the PPRPC implementation from a local checkou
 | [`capture_hotspot.ps1`](capture_hotspot.ps1) | Makes the PC the camera's router (Mobile Hotspot), records all its traffic with `pktmon` for N minutes, then sends it back home. Needs an elevated PowerShell |
 
 | [`analyze_pcap.py`](analyze_pcap.py) | Summarises a capture: DNS, remote endpoints, intervals, and with `--decrypt` the PPRPC messages to the cloud. Standard library, plus `cryptography` for `--decrypt` |
-| [`telnet_cam.ps1`](telnet_cam.ps1) | Logs into the camera's RT-Thread telnet shell (TCP 20023, password `123`) over the softAP and runs commands, filtering the interleaved background log. Driving finsh commands reliably is still WIP |
+| [`telnet_cam.ps1`](telnet_cam.ps1) | Raw-TCP login to the camera's telnet shell (TCP 20023, password `123`) and run commands. Logs in but command I/O is unreliable (no IAC handling) |
+| [`cam_shell.py`](cam_shell.py) | Same over Python `telnetlib` (handles IAC). Login is reliable; **typed finsh commands still return no output on this firmware** — see [findings](../docs/findings.md) |
 
 `a12_wifi.py --probe` sends only read-only commands and reports which ones the firmware answers; `--probe-more` does
 the same for storage and history commands, including the SD recording list; add `--debug` to see every frame. Commands must wait for the camera's heartbeats after connecting, or it ignores them.

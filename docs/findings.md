@@ -25,9 +25,18 @@ which **freezes the single network thread for ~30 s at a time**, and the camera 
 telnet session. That project dumped the flash over the **UART serial** shell for exactly this reason, and only
 *expected* the telnet shell to behave the same — they did not record a working command over telnet.
 
-Open question: whether putting the camera in station mode on a LAN that **rejects** cloud traffic fast (RST, not a
-timeout) calms the thrashing enough to make the telnet shell usable, and whether 20023 is reachable in station mode
-(untested; only confirmed on the softAP).
+Update: **TCP 20023 is open in station mode too** (camera on the LAN at a normal address, cloud reachable). So the
+cloud-thrash theory is not the whole story. With the camera on the LAN with working internet, and with a proper
+telnet client that handles IAC negotiation (`tools/cam_shell.py`, Python `telnetlib`), **login still succeeds but
+typed commands still return no output** — `version`, `fal probe app`, `fal read` all produce only the periodic
+background log, and the login/banner itself is intermittent. Tried: raw TCP and telnetlib, `\r\n`/`\n`/`\r` line
+endings, read windows up to 45 s, softAP and station mode.
+
+Conclusion so far: this firmware answers the telnet password and prints its console log, but does not give a usable
+interactive finsh shell over telnet for us. The Protoser project drove `fal` over the **UART serial** shell, not
+telnet, and only assumed telnet would behave the same. A flash dump therefore still needs the serial pads, which are
+gone on our unit. The telnet login remains a confirmed, no-soldering foothold for anyone who can get command I/O
+working (e.g. correct finsh line discipline, or a more stable network moment).
 
 Mind that the softAP password is the factory `12345678`, so anyone nearby can also reach this shell; keep the camera
 powered off when not testing.
