@@ -10,6 +10,8 @@
 #   -Wireshark  dumpcap from Wireshark + Npcap. Records BOTH directions, filtered by the camera's MAC; no admin needed.
 # -Reboot asks you to power-cycle the camera right after the capture starts, to record its start-up traffic
 # (server lookup, firmware checks).
+# -AppPairing (needs -Wireshark and -CamMac) shows the hotspot's SSID and passphrase and starts capturing at once, so
+# the vendor app can put the camera on the hotspot itself. The passphrase is only shown on screen, never logged.
 #
 # Stop any running video server first: the camera only accepts one session at a time. Needs a zkiiito/A9 checkout,
 # $env:A9_PREKEY and a9_camera.json with the camera's current LAN IP.
@@ -25,9 +27,12 @@ param(
     [string]$Out,
     [switch]$Wireshark,
     [switch]$Reboot,
+    [switch]$AppPairing,
+    [string]$CamMac,
     [string]$Dumpcap = 'C:\Program Files\Wireshark\dumpcap.exe'
 )
 if (-not $env:A9_PREKEY) { throw 'Set $env:A9_PREKEY first' }
+if ($AppPairing -and (-not $Wireshark -or -not $CamMac)) { throw '-AppPairing needs -Wireshark and -CamMac' }
 if ($Wireshark) {
     if (-not (Test-Path $Dumpcap)) { throw "dumpcap not found at $Dumpcap (install Wireshark with Npcap, or pass -Dumpcap)" }
 } elseif (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
@@ -78,7 +83,12 @@ function Find-Cam([string]$prefix, [int]$tries) {
 }
 
 $labSsid = 'freecam-lab'
-$env:FREECAM_LAB_PASS = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 16 | ForEach-Object { [char]$_ })
+if ($AppPairing) {
+    # short and lowercase: it has to be typed on the phone
+    $env:FREECAM_LAB_PASS = -join ((48..57) + (97..122) | Get-Random -Count 10 | ForEach-Object { [char]$_ })
+} else {
+    $env:FREECAM_LAB_PASS = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 16 | ForEach-Object { [char]$_ })
+}
 $camLanIp = (Get-Content $Config -Raw | ConvertFrom-Json).ip
 $pktmonOn = $false
 $hotspotOn = $false
@@ -97,16 +107,23 @@ try {
     Log "Hotspot '$labSsid' up, PC side $hsIp"
 
     # 2. move the camera onto the hotspot
-    Log "Sending '$labSsid' to the camera at $camLanIp"
-    Log (& python $Wifi --client $Client --ip $camLanIp --config $Config --ssid $labSsid --password-env FREECAM_LAB_PASS 2>&1 | Out-String)
-    $camIp = Find-Cam '192.168.137' 24
-    if (-not $camIp) { throw 'Camera did not show up on the hotspot within 2 minutes' }
-    Log "Camera joined the hotspot as $camIp"
+    if ($AppPairing) {
+        Write-Host ''
+        Write-Host ">>> In the app, use Wi-Fi '$labSsid' with passphrase: $env:FREECAM_LAB_PASS <<<"
+        Write-Host ''
+    } else {
+        Log "Sending '$labSsid' to the camera at $camLanIp"
+        Log (& python $Wifi --client $Client --ip $camLanIp --config $Config --ssid $labSsid --password-env FREECAM_LAB_PASS 2>&1 | Out-String)
+        $camIp = Find-Cam '192.168.137' 24
+        if (-not $camIp) { throw 'Camera did not show up on the hotspot within 2 minutes' }
+        Log "Camera joined the hotspot as $camIp"
+    }
 
     # 3. capture on the hotspot's virtual adapter, before NAT
     $pcap = Join-Path $Out 'camera.pcapng'
     if ($Wireshark) {
-        $camMac = (Get-NetNeighbor -IPAddress $camIp -AddressFamily IPv4).LinkLayerAddress.Replace('-', ':').ToLower()
+        if ($CamMac) { $camMac = $CamMac.Replace('-', ':').ToLower() }
+        else { $camMac = (Get-NetNeighbor -IPAddress $camIp -AddressFamily IPv4).LinkLayerAddress.Replace('-', ':').ToLower() }
         $hsAdapter = Get-NetIPAddress -AddressFamily IPv4 -IPAddress $hsIp | Get-NetAdapter
         $iface = "\Device\NPF_$($hsAdapter.InterfaceGuid)"
         Log "dumpcap on $($hsAdapter.Name) ($iface), filter: ether host $camMac"
@@ -140,6 +157,12 @@ try {
         pktmon etl2pcap $etl --out $pcap | Out-Null
     }
     Log "Saved $pcap"
+    if ($AppPairing) {
+        $camIp = Find-Cam '192.168.137' 12
+        if (-not $camIp) { throw 'Camera is not on the hotspot. To reconfigure it, hold its button 5 s for pairing mode.' }
+        # binding can change the camera's secret, so read it again instead of trusting the saved config
+        Log (& python "$Client\a9_discover.py" $camIp --wait 4 --save-config $Config 2>&1 | Out-String)
+    }
     if ($Reboot) {
         # after a reboot the camera may have taken a different address on the hotspot
         $again = Find-Cam '192.168.137' 6

@@ -66,6 +66,24 @@ What the cloud answers (decrypted with the same shared prekey):
   including the boot. Firmware updates are probably only checked when the vendor app asks, or on a long timer.
 - The cloud learns the household's **public IP** on every connection.
 
+## Third capture: pairing with the vendor app (2026-10-30)
+
+[`capture_hotspot.ps1 -Wireshark -AppPairing`](../tools/capture_hotspot.ps1): camera paired through Linklemo onto the
+PC's hotspot, then the app's "firmware update" screen opened. About 14 minutes of camera traffic, both directions.
+Only the camera's traffic was captured, not the phone's.
+
+- **The firmware check did not involve the camera.** The app answered "no firmware available", and the camera sent
+  no `FirmwareCheck` and received no `FirmwareNotify`. No download URL or `.rbl` appeared, so this route gave us no
+  official firmware.
+- **First cloud-to-camera command seen:** a message on `/xc/2d/cmd/<DID>` carrying the time zone (`Europe/Madrid`),
+  which the camera acknowledged. This confirms that the command channel works in practice.
+- **During pairing the camera sent command `1029` to the cloud with its ID and a `$5$…` credential.** The command
+  table names 1029 `Unbind`, which does not obviously fit a pairing, so treat the meaning as unverified. It is only
+  protected by the shared prekey, so anyone who can see this traffic can read it.
+- `CSCfg` still returns an empty configuration, matching the app's "cloud video storage: not activated".
+- The app reports: model `HA10`, firmware `3.00.21`, build `01_250726`, hardware `INNO-IPC-48N-V2.2`.
+- No image or video upload was seen. No live view was opened from the app in this session.
+
 ## Limitations of this capture
 
 - First capture: `pktmon` only stored the camera's **outgoing** packets. Fixed in the second one.
