@@ -15,12 +15,22 @@ Confirmed on our camera, in its `LLM_` softAP mode (camera at `192.168.9.252`):
   `msh />` shell**. Background log lines (`[xm]led on/off`, `jpeg fps`) are interleaved with command output.
 - **This is a root shell reached purely over Wi-Fi, no UART and no soldering.** It does not need the torn-off pads.
 
-Why it matters: the shell has `fal` (Flash Abstraction Layer), which per the Protoser repo is a "firmware dump path,
-no bootloader needed". So a factory flash **backup** — which we never had — is now possible, and with it, firmware
-experiments stop being blind.
+Why it matters in principle: the shell has `fal` (Flash Abstraction Layer) with `fal probe <part>` and
+`fal read <off> <len>` (hexdump) — a flash **backup** path with no bootloader (`fal erase` must never be run).
 
-Next: get a clean command list, then back up the flash. Mind that the softAP password is the factory `12345678`, so
-anyone nearby can also reach this shell; keep the camera powered off when not testing.
+**But driving commands over this telnet is, so far, not working.** After login we only get the banner and the
+periodic background log; `help`, `fal probe app` and `fal read` produced no visible command output, even with a
+45 s read window. This matches the Protoser notes: in softAP the camera endlessly retries the unreachable cloud,
+which **freezes the single network thread for ~30 s at a time**, and the camera **reboots often**, killing the
+telnet session. That project dumped the flash over the **UART serial** shell for exactly this reason, and only
+*expected* the telnet shell to behave the same — they did not record a working command over telnet.
+
+Open question: whether putting the camera in station mode on a LAN that **rejects** cloud traffic fast (RST, not a
+timeout) calms the thrashing enough to make the telnet shell usable, and whether 20023 is reachable in station mode
+(untested; only confirmed on the softAP).
+
+Mind that the softAP password is the factory `12345678`, so anyone nearby can also reach this shell; keep the camera
+powered off when not testing.
 
 ## 2026-10-30: listing SD recordings over the LAN
 

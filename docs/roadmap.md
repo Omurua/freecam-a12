@@ -18,7 +18,9 @@
 ## Phase 2: firmware
 - [x] Find the UART console and capture the boot log ([hardware.md](hardware.md))
 - [x] **Root shell over Wi-Fi: telnet on TCP 20023, `root`/`123`, no soldering** ([findings](findings.md))
-- [ ] Dump the flash with `fal` over telnet (keep a backup and **never** publish it)
+- [ ] Dump the flash with `fal` over telnet (keep a backup and **never** publish it). Blocked so far: in softAP the
+      telnet shell freezes on cloud-retry thrashing and the camera reboots often, so commands get no reply. Idea:
+      station mode with cloud traffic rejected fast, then retry
 - [ ] **microSD route (open research):** the RT-Thread OTA bootloader references an update file on the SD card
       (`RTTHREAD.RBL`). Learn from RT-Thread's public OTA documentation and the BK7252 community
       ([beken7252-opencam](https://github.com/daniel-dona/beken7252-opencam), Elektroda) when and how it is used,
