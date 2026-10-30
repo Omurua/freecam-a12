@@ -9,7 +9,7 @@
 #
 # Examples:
 #   .\tools\telnet_cam.ps1 -Commands 'help'                 # already on the LLM_ AP
-#   .\tools\telnet_cam.ps1 -JoinSsid LLM_HA10_055888 -HomeSsid CodeNet -Commands 'help','fal'
+#   .\tools\telnet_cam.ps1 -JoinSsid LLM_HA10_XXXXXX -HomeSsid CodeNet -Commands 'help','fal'
 param(
     [string[]]$Commands = @('help'),
     [string]$CamIp = '192.168.9.252',
