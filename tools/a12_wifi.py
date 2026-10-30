@@ -33,6 +33,15 @@ PROBE_CMDS = [
     (2685, "GetNetworkInfo"), (2638, "SecretGet"),
 ]
 
+# --probe-more: names suggest read-only, but their request formats are undocumented, so they are sent empty.
+# LogSet (2656) and CustomCmd (2699) are left out on purpose: one changes settings, the other is unknown.
+PROBE_MORE_CMDS = [
+    (2622, "HistoryPlanGet"), (2623, "HistoryDays"), (2624, "HistoryDayList"), (2640, "NotifyGet"),
+    (2642, "MotionzoneGet"), (2652, "TimedcruiseGet"), (2659, "PowerFreqGet"), (2660, "VolumeGet"),
+    (2662, "AlarmGet"), (2666, "PirGet"), (2667, "ChanState"), (2680, "EventRecordGet"),
+    (2686, "OsdGet"), (2703, "DirList"), (2708, "FileThumList"), (1053, "DeviceGetUserList"),
+]
+
 def load_client(path):
     path = os.path.abspath(path)
     if not os.path.isfile(os.path.join(path, "a9_proto.py")):
@@ -131,6 +140,15 @@ class Session:
 def text(v):
     return v.decode(errors="replace") if isinstance(v, bytes) else str(v)
 
+def show(P, v):
+    """Readable form of a protobuf value: text if printable, else a nested message if it parses, else hex."""
+    if not isinstance(v, bytes):
+        return v
+    if v and all(32 <= c < 127 for c in v):
+        return v.decode()
+    f = P.pb_parse(v)
+    return {k: [show(P, x) for x in xs] for k, xs in f.items()} if f else v.hex()
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--client", required=True, help="path to a zkiiito/A9 checkout")
@@ -143,6 +161,8 @@ def main():
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--probe", action="store_true",
                       help="send read-only commands and report which ones this firmware answers")
+    mode.add_argument("--probe-more", action="store_true",
+                      help="like --probe, for storage, history and settings commands with undocumented requests")
     mode.add_argument("--show", action="store_true", help="print the stored station SSID")
     mode.add_argument("--scan", action="store_true", help="list networks the camera can see")
     mode.add_argument("--ssid", help="network the camera should join (2.4 GHz only)")
@@ -168,14 +188,14 @@ def main():
     print(f"[*] camera {ip}, authenticating…")
     sess = Session(P, ip, did, secret, a.timeout, a.debug)
     try:
-        if a.probe:
+        if a.probe or a.probe_more:
             sess.timeout = min(a.timeout, 3.0)
-            for cmd, name in PROBE_CMDS:
+            for cmd, name in (PROBE_CMDS if a.probe else PROBE_MORE_CMDS):
                 r = sess.call(cmd)
                 if r is None:
                     print(f"  {cmd:5d} {name:15s} no reply")
                 else:
-                    fields = {k: [text(x) for x in v] for k, v in r[1].items()}
+                    fields = {k: [show(P, x) for x in v] for k, v in r[1].items()}
                     print(f"  {cmd:5d} {name:15s} code={r[0]} {fields}")
         elif a.show:
             r = sess.call(CMD_WIFIGET)

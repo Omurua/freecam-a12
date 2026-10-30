@@ -21,7 +21,8 @@
 - [ ] **microSD route (open research):** the RT-Thread OTA bootloader references an update file on the SD card
       (`RTTHREAD.RBL`). Learn from RT-Thread's public OTA documentation and the BK7252 community
       ([beken7252-opencam](https://github.com/daniel-dona/beken7252-opencam), Elektroda) when and how it is used,
-      and first test it only with an official, unmodified firmware image
+      and first test it only with an official, unmodified firmware image. An official OpenBeken RBL had no effect so
+      far, see [findings](findings.md)
 - [ ] The app also reads a factory file `/sd/config_json.txt` (`wifi_ssid`, `wifi_key`, `led_time`, `test_mode`):
       possible app-less Wi-Fi setup, untested
 - [ ] Analyse it with Ghidra and an AI assistant (GhidraMCP / REA), see [ai-workflow.md](ai-workflow.md)
