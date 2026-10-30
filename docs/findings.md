@@ -2,6 +2,26 @@
 
 Lab notes, newest first. Device identifiers (DID, MAC suffix, secrets) are redacted.
 
+## 2026-10-30: root shell over Wi-Fi via telnet ✅ (no soldering)
+
+Lead from [Protoser/bk7252-cam-reverse-eng](https://github.com/Protoser/bk7252-cam-reverse-eng), which documents an
+identical unit (`hardwareVer INNO-IPC-48N-V2.2`, `IOTSDK 3.00.42.01_241230`, `LLM_HA10_*` AP) with a telnet server
+on TCP **20023**, login **`root` / `123`**.
+
+Confirmed on our camera, in its `LLM_` softAP mode (camera at `192.168.9.252`):
+
+- Port scan: **TCP 20023 open**, as well as 20190. (Our earlier 17-port scan had not included 20023.)
+- A raw TCP client logged in with password `123` and got the banner `Wellcome use telnet` and an **RT-Thread finsh
+  `msh />` shell**. Background log lines (`[xm]led on/off`, `jpeg fps`) are interleaved with command output.
+- **This is a root shell reached purely over Wi-Fi, no UART and no soldering.** It does not need the torn-off pads.
+
+Why it matters: the shell has `fal` (Flash Abstraction Layer), which per the Protoser repo is a "firmware dump path,
+no bootloader needed". So a factory flash **backup** — which we never had — is now possible, and with it, firmware
+experiments stop being blind.
+
+Next: get a clean command list, then back up the flash. Mind that the softAP password is the factory `12345678`, so
+anyone nearby can also reach this shell; keep the camera powered off when not testing.
+
 ## 2026-10-30: listing SD recordings over the LAN
 
 `a12_wifi.py --probe-more` sends commands that look read-only, with empty requests.
