@@ -14,8 +14,8 @@ Our own helper scripts. They reuse the PPRPC implementation from a local checkou
 
 | [`analyze_pcap.py`](analyze_pcap.py) | Summarises a capture: DNS, remote endpoints, intervals, and with `--decrypt` the PPRPC messages to the cloud. Standard library, plus `cryptography` for `--decrypt` |
 
-`a12_wifi.py --probe` sends only read-only commands and reports which ones the firmware answers; add `--debug`
-to see every frame. Commands must wait for the camera's heartbeats after connecting, or it ignores them.
+`a12_wifi.py --probe` sends only read-only commands and reports which ones the firmware answers; `--probe-more` does
+the same for storage and history commands, including the SD recording list; add `--debug` to see every frame. Commands must wait for the camera's heartbeats after connecting, or it ignores them.
 
 The Windows scripts are written for PCs whose only internet link is Wi-Fi: they always reconnect to the home
 network at the end. Results go to `captures/` (gitignored).
